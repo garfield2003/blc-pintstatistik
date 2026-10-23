@@ -1,0 +1,73 @@
+rules_version = '2';
+
+// BLC Pintstatistik
+// - Lesen darf jeder mit dem Link.
+// - Zählen (Sitzungen, Gäste) darf ein Gerät, das den Club-PIN oder den Admin-PIN eingegeben hat.
+// - Preis, Mitglieder, PINs und Löschen nur mit Admin-PIN.
+// Die PINs liegen in /secret und sind für niemanden lesbar; nur diese Regeln vergleichen sie.
+// Ändert der Admin den Club-PIN, verlieren alle Geräte mit dem alten PIN sofort ihre Zählrechte.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function secretVal(name) {
+      return get(/databases/$(database)/documents/secret/$(name)).data.value;
+    }
+    function registered() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/writers/$(request.auth.uid));
+    }
+    function me() {
+      return get(/databases/$(database)/documents/writers/$(request.auth.uid)).data;
+    }
+    function isAdmin() {
+      return registered() && me().role == 'admin' && me().pin == secretVal('admin');
+    }
+    function isCounter() {
+      return registered() && (isAdmin() || (me().role == 'counter' && me().pin == secretVal('pin')));
+    }
+    function validPin(minLen) {
+      return request.resource.data.keys().hasOnly(['value'])
+        && request.resource.data.value is string
+        && request.resource.data.value.size() >= minLen;
+    }
+
+    match /config/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /members/{id} {
+      allow read: if true;
+      allow create: if isCounter();
+      allow update, delete: if isAdmin();
+    }
+
+    match /sessions/{id} {
+      allow read: if true;
+      allow create, update: if isCounter();
+      allow delete: if isAdmin();
+    }
+
+    // Ein Eintrag pro Gerät: welchen PIN es eingegeben hat und welche Rolle es damit beansprucht.
+    match /writers/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['pin', 'role', 'at'])
+        && (
+          (request.resource.data.role == 'admin' && request.resource.data.pin == secretVal('admin'))
+          || (request.resource.data.role == 'counter' && request.resource.data.pin == secretVal('pin'))
+        );
+    }
+
+    match /secret/{name} {
+      allow read: if false;
+      // Admin-PIN: einmalig bei der Ersteinrichtung setzen, danach nur durch den Admin
+      allow create: if name == 'admin' && request.auth != null
+        && !exists(/databases/$(database)/documents/secret/admin) && validPin(6);
+      allow update: if name == 'admin' && isAdmin() && validPin(6);
+      // Club-PIN: nur durch den Admin
+      allow create, update: if name == 'pin' && isAdmin() && validPin(4);
+    }
+  }
+}

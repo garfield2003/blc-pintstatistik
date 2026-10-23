@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BLC Pintstatistik</title>
+<meta name="description" content="Pintstatistik des Business Lunch Club – BLC-Resolution 11-2002-01">
+<meta name="theme-color" content="#000066">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BLC Pints">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Federant&family=Alegreya+Sans:wght@400;500;700;800&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap crest">
+    <img src="icons/icon-192.png" alt="BLC Logo" width="64" height="64">
+    <div>
+      <h1>Pintstatistik</h1>
+      <div class="res">BLC-Resolution 11-2002-01 · Oliver Twist Pub</div>
+    </div>
+    <div class="role" id="role-badge" hidden></div>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Bereiche">
+  <div class="wrap">
+    <button role="tab" id="tab-sitzung" aria-controls="p-sitzung" aria-selected="true" data-tab="sitzung">Sitzung</button>
+    <button role="tab" id="tab-uebersicht" aria-controls="p-uebersicht" aria-selected="false" data-tab="uebersicht">Übersicht</button>
+    <button role="tab" id="tab-verwaltung" aria-controls="p-verwaltung" aria-selected="false" data-tab="verwaltung">Verwaltung</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <section role="tabpanel" id="p-sitzung" aria-labelledby="tab-sitzung"><div class="notice">Die Statistik wird geladen …</div></section>
+  <section role="tabpanel" id="p-uebersicht" aria-labelledby="tab-uebersicht" hidden></section>
+  <section role="tabpanel" id="p-verwaltung" aria-labelledby="tab-verwaltung" hidden></section>
+</main>
+
+<div class="bill" id="bill" hidden>
+  <div class="wrap">
+    <div class="row" style="gap:22px">
+      <div class="fig"><span>Diese Sitzung</span><b class="num" id="bill-pints">0 Pints</b></div>
+      <div class="fig"><span>Betrag</span><b class="num" id="bill-fr">Fr. 0.00</b></div>
+    </div>
+    <button class="btn" id="bill-close">Abschliessen</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden><span id="toast-text"></span><button id="toast-undo">Rückgängig</button></div>
+<div class="offline" id="offline" hidden>Offline – Eingaben werden gespeichert und später übertragen.</div>
+
+<script type="module" src="app.js"></script>
+<script>
+  if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+</script>
+</body>
+</html>
