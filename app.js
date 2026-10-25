@@ -347,37 +347,59 @@ function renderUebersicht() {
     </div>
     <div class="row"><button class="btn" id="export">Als Excel (CSV) herunterladen</button></div>
 
-    <div class="row spread"><h2>Sitzungen</h2>${canCount() ? `<div class="muted small">Zum Korrigieren eine Sitzung antippen</div>` : ""}</div>
-    ${editing ? editPanel(editing) : ""}
+    <div class="row spread"><h2>Sitzungen</h2><div class="muted small">${canCount() ? "Antippen für Details und Korrekturen" : "Antippen für Details"}</div></div>
     <div class="tablebox">
-      <table>
-        <thead><tr><th>Datum</th><th>Sitzung</th><th>Pints</th><th>Fr.</th></tr></thead>
+      <table class="hist">
+        <thead><tr><th>Sitzung</th><th>Pints</th><th>Fr.</th></tr></thead>
         <tbody>
-          ${S.sessions.map(s => `<tr class="${canCount() ? "hist-row" : ""}" data-edit="${esc(s.id)}" ${canCount() ? `tabindex="0"` : ""}>
-            <td>${esc(dateText(s.date))}</td>
-            <td class="nm">${esc(s.label)} ${s.closed ? "" : `<span class="chip live">Live</span>`}</td>
+          ${S.sessions.map(s => `<tr class="hist-row ${s.id === S.editId ? "open" : ""}" data-edit="${esc(s.id)}" tabindex="0" aria-expanded="${s.id === S.editId}">
+            <td class="nm"><span class="caret" aria-hidden="true">›</span>${esc(s.label)} ${s.closed ? "" : `<span class="chip live">Live</span>`}<div class="sub">${esc(dateText(s.date))}</div></td>
             <td>${p(sessionSum(s))}</td>
             <td>${fmtFr.format(sessionSum(s) * S.price)}</td>
-          </tr>`).join("")}
-          <tr><td class="muted">bis ${esc(S.sessions.length ? S.sessions[S.sessions.length - 1].label : "")}</td><td class="nm muted">Übertrag aus der Excel-Statistik</td><td class="muted">${p(S.members.reduce((a, m) => a + (Number(m.base) || 0), 0))}</td><td></td></tr>
+          </tr>${s.id === S.editId ? `<tr class="detail-row"><td colspan="3">${canCount() ? editPanel(s) : detailPanel(s)}</td></tr>` : ""}`).join("")}
+          <tr><td class="nm muted">Übertrag Excel<div class="sub">bis ${esc(S.sessions.length ? S.sessions[S.sessions.length - 1].label : "")}</div></td><td class="muted">${p(S.members.reduce((a, m) => a + (Number(m.base) || 0), 0))}</td><td></td></tr>
         </tbody>
       </table>
     </div>
   `;
   $("export").addEventListener("click", exportCsv);
-  if (canCount()) el.querySelectorAll("[data-edit]").forEach(tr => {
-    const open = () => { S.editId = S.editId === tr.dataset.edit ? null : tr.dataset.edit; S.confirm = null; renderUebersicht(); };
+  el.querySelectorAll("[data-edit]").forEach(tr => {
+    const open = () => {
+      S.editId = S.editId === tr.dataset.edit ? null : tr.dataset.edit; S.confirm = null; renderUebersicht();
+      const row = document.querySelector(`[data-edit="${CSS.escape(tr.dataset.edit)}"]`);
+      if (S.editId && row) row.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    };
     tr.addEventListener("click", open);
-    tr.addEventListener("keydown", e => { if (e.key === "Enter") open(); });
+    tr.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
   });
-  if (editing) wireEditPanel(editing);
+  if (editing && canCount()) wireEditPanel(editing);
+}
+
+// Nur-Ansicht: wer wie viel getrunken hat
+function detailPanel(s) {
+  const counts = s.counts || {};
+  const rows = S.members.map(m => ({ m, c: Number(counts[m.id]) || 0 }));
+  const drank = rows.filter(r => r.c > 0).sort((a, b) => b.c - a.c || a.m.name.localeCompare(b.m.name));
+  const none = rows.filter(r => r.c === 0 && r.m.active !== false);
+  const sum = sessionSum(s);
+  return `<div class="detail">
+    <table class="detail-table">
+      <tbody>
+        ${drank.map(r => `<tr><td class="nm">${esc(r.m.name)}</td><td>${p(r.c)}</td><td>${fmtFr.format(r.c * S.price)}</td></tr>`).join("")}
+      </tbody>
+      <tfoot><tr><td>Total</td><td>${p(sum)}</td><td>${fmtFr.format(sum * S.price)}</td></tr></tfoot>
+    </table>
+    ${drank.length === 0 ? `<div class="muted small">In dieser Sitzung wurde noch nichts gezählt.</div>` : ""}
+    ${none.length && drank.length ? `<div class="muted small">Ohne Pint: ${none.map(r => esc(r.m.name)).join(", ")}</div>` : ""}
+    ${s.closed ? "" : `<div class="muted small">Die Sitzung läuft noch, die Zahlen ändern sich live.</div>`}
+  </div>`;
 }
 
 function editPanel(s) {
   const list = S.members.filter(m => m.active !== false || (s.counts || {})[m.id]);
   return `<div class="panel" id="edit-panel">
     <div class="row spread">
-      <div><h3>Korrektur</h3><div class="session-head"><span class="label">${esc(s.label)}</span></div></div>
+      <h3>Korrektur</h3>
       <button class="btn" id="edit-done">Fertig</button>
     </div>
     <div class="row">

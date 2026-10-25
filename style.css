@@ -149,6 +149,22 @@ tr.inactive td.nm { color: var(--gold-soft); }
 .chip { display: inline-block; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 800; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; vertical-align: 2px; }
 .chip.live { background: var(--gold); color: var(--ink-on-gold); border-color: var(--gold); }
 
+/* Sitzungsliste mit aufklappbaren Details */
+table.hist th:first-child, table.hist td:first-child { text-align: left; white-space: normal; }
+table.hist th:nth-child(2), table.hist td:nth-child(2) { text-align: right; }
+table.hist td .sub { font-size: .8rem; color: var(--gold-soft); font-weight: 400; }
+table.hist .caret { display: inline-block; width: 1em; color: var(--gold-soft); transition: transform .15s; }
+table.hist tr.open .caret { transform: rotate(90deg); }
+table.hist > tbody > tr.open > td { border-bottom-color: transparent; }
+table.hist > tbody > tr.detail-row > td { padding: 0 10px 12px; white-space: normal; text-align: left; }
+@media (prefers-reduced-motion: reduce) { table.hist .caret { transition: none; } }
+.detail { display: grid; gap: 8px; padding: 12px 14px; border-radius: 10px; background: var(--navy-deep); border: 1px solid var(--line); }
+table.detail-table td { padding: 6px 4px; text-align: right; }
+table.detail-table td:first-child { text-align: left; }
+table.detail-table td:nth-child(2) { text-align: right; }
+table.detail-table tfoot td { border-top: 1px solid var(--gold); }
+tr.detail-row .panel { padding: 12px; }
+
 /* Korrektur-Panel */
 .panel { border: 1px solid var(--gold); border-radius: 14px; padding: 16px; display: grid; gap: 14px; background: var(--navy-deep); }
 .edit-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }

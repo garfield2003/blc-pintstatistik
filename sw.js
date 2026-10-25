@@ -1,6 +1,6 @@
 // Hält die App-Dateien bereit, damit sie im Pub auch ohne Empfang startet.
 // Eigene Dateien: zuerst Netz (immer aktuell), sonst Cache. Firebase-Bibliothek und Schriften: Cache zuerst.
-const CACHE = "blc-pints-v1";
+const CACHE = "blc-pints-v2";
 const SHELL = [
   "./", "index.html", "style.css", "app.js", "seed.js", "firebase-config.js",
   "backend-firebase.js", "backend-demo.js", "manifest.webmanifest",
